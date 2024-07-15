@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
+import { userMention } from 'discord.js'
 import {
   joinVoiceChannel,
   getVoiceConnection,
@@ -11,6 +12,7 @@ import {
 } from "@discordjs/voice";
 import ytdl from "@distube/ytdl-core";
 import config from "../config.json" assert { type: "json" };
+import { ghostInteractionReply, later } from "../util/message.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -20,31 +22,62 @@ export default {
       subcommand
         .setName("start")
         .setDescription("Start playing audio from a youtube link. Yay!")
-        .addChannelOption((option) => option.setName("channel").setDescription("Channel to join").setRequired(true))
         .addStringOption((option) => option.setName("link").setDescription("Youtube Link").setRequired(true))
+        .addChannelOption((option) => option.setName("channel").setDescription("Channel to join").setRequired(false))
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName("pause_or_resume").setDescription("Stop or continue playing the current audio source. aww, why?")
+      subcommand.setName("pause_or_resume").setDescription("**stop or continue** playing the current audio source. aww, why?")
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName("dc").setDescription("Disconnect from the voice channel. bye... *later (╯°□°)╯︵ ┻━┻*")
+      subcommand.setName("dc").setDescription("**disconnect from the voice channel**. bye... *later (╯°□°)╯︵ ┻━┻*")
     ),
 
   async execute(interaction) {
     if (interaction.options.getSubcommand() === "start") {
       const channel = interaction.options.getChannel("channel");
       const url = interaction.options.getString("link");
-      // TODO: What if he is already playing?
-      if (channel.isVoiceBased()) {
-        connect_and_prepare(channel, url);
-        await interaction.reply({ content: "joining vc...", ephemeral: true });
-        await later(5000);
-        await interaction.deleteReply();
-      } else {
-        await interaction.reply({ content: "provided channel is not a voice channel... idiot", ephemeral: true });
-        await later(5000);
-        await interaction.deleteReply();
+      // Try to get previous connection
+      let connection = getVoiceConnection(interaction.guild.id);
+      const own_channel = interaction.guild.members.me.voice.channel;
+
+      if (channel && !channel.isVoiceBased()) {
+        // Provided channel is not voice
+        ghostInteractionReply(interaction, "**provided channel is not a voice channel..**. idiot", 5)
+        return;
       }
+
+      if (!connection && !channel) {
+        // There is no connection and no channel was provided
+        ghostInteractionReply(interaction, "it would be helpful to first know **where you want me** to make noise, you know..", 5)
+        return;
+      }
+
+      if (!connection && channel) {
+        // There is no connection and a channel was provided
+        ghostInteractionReply(interaction, "**joining vc..**.", 5)
+      }
+
+      if (channel && connection && own_channel && own_channel.id !== channel.id) {
+        // Different channel
+        const subscription = connection.state.subscription;
+        if (subscription && subscription.player) {
+          subscription.player.stop();
+        }
+        connection = null;
+        ghostInteractionReply(interaction, "**switching channel..** to uhh, australia??", 3)
+      }
+
+      if (connection) {
+        // Already connected, just want to change resource
+        const subscription = connection.state.subscription;
+        if (subscription && subscription.player) {
+          subscription.player.stop();
+        }
+        ghostInteractionReply(interaction, "**changing tunes..** i hope you didn't interrupt a drop there", 3)
+      }
+
+      connect_and_prepare(channel, url, connection, interaction.channel, interaction.user);
+
     } else if (interaction.options.getSubcommand() === "pause_or_resume") {
       const connection = getVoiceConnection(interaction.guild.id);
       if (connection) {
@@ -52,79 +85,45 @@ export default {
         if (player) {
           if (player.state.status === "paused" && player.playable) {
             player.unpause();
-            await interaction.reply({
-              content: "continuing playback of your awesome music (if its music (oh god I hope its music))",
-              ephemeral: true,
-            });
-            await later(3000);
-            await interaction.deleteReply();
+            ghostInteractionReply(interaction, "continuing playback of your awesome music(if its music(oh god I hope its music))", 3)
           } else if (player.state.status === "playing") {
             player.pause();
-            await interaction.reply({
-              content: "paused playback of whatever your dumb ass was listening to..",
-              ephemeral: true,
-            });
-            await later(3000);
-            await interaction.deleteReply();
+            ghostInteractionReply(interaction, "paused playback of whatever your dumb ass was listening to..", 3)
           } else {
             getVoiceConnection(interaction.guild.id).destroy();
-            await interaction.reply({
-              content: "something seems off with this voice session (player has unexpected state).. maybe come back later?",
-              ephemeral: true,
-            });
-            await later(5000);
-            await interaction.deleteReply();
+            ghostInteractionReply(interaction, "something seems off with this voice session (player has unexpected state).. maybe come back later?", 5)
           }
         } else {
           getVoiceConnection(interaction.guild.id).destroy();
-          await interaction.reply({
-            content: "something seems off with this voice session (player isnt player).. maybe come back later?",
-            ephemeral: true,
-          });
-          await later(5000);
-          await interaction.deleteReply();
+          ghostInteractionReply(interaction, "something seems off with this voice session (player isn't player).. maybe come back later?", 5)
         }
       } else {
-        await interaction.reply({
-          content: "i dont even seem to be connected yet, idiot",
-          ephemeral: true,
-        });
-        await later(3000);
-        await interaction.deleteReply();
+        ghostInteractionReply(interaction, "i dont even seem to be connected yet, idiot", 3)
       }
+
     } else if (interaction.options.getSubcommand() === "dc") {
       const connection = getVoiceConnection(interaction.guild.id);
       if (connection) {
         connection.destroy();
-        await interaction.reply({ content: "leaving current vc, bye...\n see you later!", ephemeral: true });
-        await later(5000);
-        await interaction.deleteReply();
+        ghostInteractionReply(interaction, "leaving current vc, bye...\n see you later!", 5)
       } else {
-        await interaction.reply({
-          content: "i dont even seem to be connected yet, idiot",
-          ephemeral: true,
-        });
-        await later(3000);
-        await interaction.deleteReply();
+        ghostInteractionReply(interaction, "i dont even seem to be connected yet, idiot", 3)
       }
     }
   },
 };
 
-function later(delay) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, delay);
-  });
-}
-
-export async function connect_and_prepare(channel, url) {
-  const connection = joinVoiceChannel({
-    channelId: channel.id,
-    guildId: channel.guild.id,
-    adapterCreator: channel.guild.voiceAdapterCreator,
-    selfDeaf: false,
-    selfMute: false,
-  });
+export async function connect_and_prepare(channel, url, connection, source_channel, source_user) {
+  // Is the provided connection actually functional? If not, we create a new one
+  if (!connection) {
+    connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: channel.guild.id,
+      adapterCreator: channel.guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false,
+    });
+  }
 
   connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
     try {
@@ -139,13 +138,17 @@ export async function connect_and_prepare(channel, url) {
     }
   });
 
+  // Get a Stream Readable from ytdl
   const stream = getYoutubeResource(url);
 
   if (stream) {
+    const source_user_mention = userMention(source_user.id);
+    source_channel.send("\`\`oke, playing  ↓  for\`\` " + source_user_mention +", \`\`im only doing this once, you hear me?.. \`\`\n              " + url)
+
     const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, silencePaddingFrames: 10 });
     play_resource(connection, resource)
       .then(() => {
-        console.log("Successfully played resource.");
+        console.log("Successfully finished playing resource.");
       })
       .catch((e) => {
         console.log("Failed while playing resource. ERR:");
@@ -156,12 +159,36 @@ export async function connect_and_prepare(channel, url) {
 
 export async function play_resource(connection, resource) {
   await new Promise(async (resolve, reject) => {
-    const player = createAudioPlayer({
-      behaviors: {
-        noSubscriber: NoSubscriberBehavior.Pause,
-      },
-    });
-    const subscription = connection.subscribe(player);
+    let player;
+    let subscription = connection.state.subscription;
+    // Is there already a subscription on our connection?
+    if (!subscription) {
+      // No, there is not, so create one
+      player = createAudioPlayer({
+        behaviors: {
+          noSubscriber: NoSubscriberBehavior.Pause,
+        },
+      });
+      // And we need to subscribe it (freshly)
+      subscription = connection.subscribe(player);
+    } else {
+      // Does this subscription already have a player?
+      if (subscription.player) {
+        // Yes, there is, so we can reuse it
+        player = subscription.player;
+      } else {
+        console.log("Encountered subscription without subscribed player, something is off.")
+        player = createAudioPlayer({
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Pause,
+          },
+        });
+        subscription.unsubscribe();
+        // And we need to subscribe it (again?)
+        subscription = connection.subscribe(player);
+      }
+    }
+
     while (!player.playable) {
       console.log("Player is still in state " + player.state + ", waiting.");
       await later(500);
@@ -175,9 +202,11 @@ export async function play_resource(connection, resource) {
       reject(error);
     });
 
+    // Stop after an hour
     const timeout = setTimeout(() => {
       player.stop();
       subscription?.unsubscribe();
+      connection.destroy();
       resolve();
     }, 3_600_000);
 
