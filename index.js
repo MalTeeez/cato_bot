@@ -3,15 +3,18 @@ import { init_dice_cache } from './util/user_storage.js';
 import fs from 'node:fs';
 import config from './config.json' assert {type: 'json'};
 
-//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=2147493888&scope=bot%20applications.commands
+//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=598961143457792&scope=bot%20applications.commands%20
+//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=563879850600512&integration_type=0&scope=bot
 export const client = new Client({
     intents: [
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
     ],
     partials: [
         Partials.Channel,
-        Partials.Message
+        Partials.Message,
+        Partials.GuildMember,
     ]
 })
 
