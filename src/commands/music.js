@@ -11,7 +11,7 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import ytdl from "@distube/ytdl-core";
-import config from "../../config.json" assert { type: "json" };
+import config from "../config.json" assert { type: "json" };
 import { ghostChannelMessage, ghostInteractionReply, later } from "../util/message.js";
 
 export default {

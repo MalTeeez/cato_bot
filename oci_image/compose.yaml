@@ -1,0 +1,8 @@
+services:
+  iview_nginx:
+    image: cato:latest
+    container_name: discord_cato_bot
+    restart: always
+    environment:
+      - BOT_TOKEN=YOUR-BOT-TOKEN
+      - BOT_ID=YOUR-BOT-CLIENT-ID

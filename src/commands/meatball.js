@@ -9,6 +9,6 @@ export default {
     async execute(interaction) {
         await interaction.reply({ content: "delivering meatball...", ephemeral: true });
         await interaction.deleteReply();
-        interaction.channel.send({ files: ["./cache/meatball.jpg"], content: "Fuckingl .meatball ." })
+        interaction.channel.send({ files: ["../cache/meatball.jpg"], content: "Fuckingl .meatball ." })
     },
 };

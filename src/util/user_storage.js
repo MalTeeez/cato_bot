@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const FILE_PATH = "./cache/dice_ranges.json";
+const FILE_PATH = "../cache/dice_ranges.json";
 var dice_ranges;
 
 export async function init_dice_cache() {
