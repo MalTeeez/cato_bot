@@ -1,10 +1,10 @@
 import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 import { init_dice_cache } from './util/user_storage.js';
 import fs from 'node:fs';
-import config from './config.json' assert {type: 'json'};
+import config from '../config.json' assert {type: 'json'};
 
-//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=598961143457792&scope=bot%20applications.commands%20
-//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=563879850600512&integration_type=0&scope=bot
+//https://discord.com/oauth2/authorize?client_id=1261440091730084003&permissions=274881170432&redirect_uri=https%3A%2F%2Fsxmaa.net%2Fdiscord%2F&integration_type=0&scope=applications.commands+bot
+
 export const client = new Client({
     intents: [
         GatewayIntentBits.DirectMessages,

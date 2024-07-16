@@ -11,8 +11,8 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import ytdl from "@distube/ytdl-core";
-import config from "../config.json" assert { type: "json" };
-import { ghostInteractionReply, later } from "../util/message.js";
+import config from "../../config.json" assert { type: "json" };
+import { ghostChannelMessage, ghostInteractionReply, later } from "../util/message.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -33,6 +33,12 @@ export default {
     ),
 
   async execute(interaction) {
+    // Command doesn't work in dm's  
+    if (interaction.guildId == null) {
+      ghostInteractionReply(interaction, "this command only works in servers, idiot..", 15);
+      return;
+    }
+
     if (interaction.options.getSubcommand() === "start") {
       const channel = interaction.options.getChannel("channel");
       const url = interaction.options.getString("link");
@@ -134,27 +140,41 @@ export async function connect_and_prepare(channel, url, connection, source_chann
       // Seems to be reconnecting to a new channel - ignore disconnect
     } catch (error) {
       // Seems to be a real disconnect which SHOULDN'T be recovered from
-      connection.destroy();
+      console.log("encountered error on voiceConnectionStatus.Disconnected handler. ERR:")
+      console.log(error)
+      if (connection) connection.destroy();
     }
   });
 
-  // Get a Stream Readable from ytdl
-  const stream = getYoutubeResource(url);
+  await new Promise(async (resolve, reject) => {
+    let stream;
+    try {
+      // Get a Stream Readable from ytdl
+      stream = getYoutubeResource(url);
 
-  if (stream) {
-    const source_user_mention = userMention(source_user.id);
-    source_channel.send("\`\`oke, playing  ↓  for\`\` " + source_user_mention +", \`\`im only doing this once, you hear me?.. \`\`\n              " + url)
+      if (stream) {
+        const source_user_mention = userMention(source_user.id);
+        source_channel.send("\`\`oke, playing  ↓  for\`\` " + source_user_mention + ", \`\`im only doing this once, you hear me?.. \`\`\n              " + url)
 
-    const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, silencePaddingFrames: 10 });
-    play_resource(connection, resource)
-      .then(() => {
-        console.log("Successfully finished playing resource.");
-      })
-      .catch((e) => {
-        console.log("Failed while playing resource. ERR:");
-        console.log(e);
-      });
-  }
+        const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, silencePaddingFrames: 10 });
+        play_resource(connection, resource)
+          .then(() => {
+            resolve("Successfully finished playing resource.")
+          })
+          .catch((e) => {
+            reject(e)
+          });
+      }
+    } catch (e) {
+      reject(e)
+    }
+  }).then((value) => {
+    console.log(value)
+  }).catch((error) => {
+    console.log("Failed while playing resource. ERR:");
+    console.log(error);
+    ghostChannelMessage(source_channel, "encountered error while trying to play video, that *clearly* was your mistake, huh?", 10)
+  });
 }
 
 export async function play_resource(connection, resource) {
@@ -206,7 +226,7 @@ export async function play_resource(connection, resource) {
     const timeout = setTimeout(() => {
       player.stop();
       subscription?.unsubscribe();
-      connection.destroy();
+      if (connection) connection.destroy();
       resolve();
     }, 3_600_000);
 
@@ -219,19 +239,23 @@ export async function play_resource(connection, resource) {
 }
 
 function getYoutubeResource(yt_url) {
-  if (ytdl.validateURL(yt_url)) {
-    var stream = ytdl(yt_url, {
-      filter: "audioonly",
-      highWaterMark: 16384,
-      dlChunkSize: 65536,
-      quality: "highestaudio",
-      requestOptions: {
-        headers: {
-          cookie: config.yt_cookie,
-        },
-      },
-    });
-    return stream;
+  try {
+    if (ytdl.validateURL(yt_url)) {
+      var stream = ytdl(yt_url, {
+        filter: "audioonly",
+        highWaterMark: 16384,
+        dlChunkSize: 65536,
+        quality: "highestaudio",
+//        requestOptions: {              // SEE: config.json.example -> yt_cookie
+//          headers: {
+//            cookie: config.yt_cookie,
+//          },
+//        },
+      });
+      return stream;
+    }
+    return false;
+  } catch (e) {
+    throw e;
   }
-  return false;
 }

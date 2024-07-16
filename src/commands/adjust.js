@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { addOrAdjust } from "../util/user_storage.js";
+import { ghostInteractionReply } from "../util/message.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -15,9 +16,9 @@ export default {
   async execute(interaction) {
     if (interaction.options.getSubcommand() === "roll" && interaction.options.getInteger("min") && interaction.options.getInteger("max")) {
       addOrAdjust(interaction.user.id, interaction.options.getInteger("min"), interaction.options.getInteger("max"))
-      interaction.reply("Adjusted dice roll to land between " + interaction.options.getInteger("min") + " and " + interaction.options.getInteger("max") + ".");
+      ghostInteractionReply(interaction, "Adjusted dice roll to land between " + interaction.options.getInteger("min") + " and " + interaction.options.getInteger("max") + ".", 30);
     } else {
-      interaction.reply("Subcommand not specified or found.");
+      ghostInteractionReply(interaction, "Subcommand not specified or found.", 10);
     }
   },
 };

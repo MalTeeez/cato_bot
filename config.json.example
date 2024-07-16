@@ -1,0 +1,6 @@
+{
+    "token": "discord bot token from: https://discord.com/developers/applications/............./bot \"Reset Token\"",
+    "clientId": "the bots own client id, needed for the cmd_deploy script",
+    "yt_cookie": "the youtube cookie for *maybe* more reliable downloads - see https://github.com/distubejs/ytdl-core/issues/31 and https://github.com/yt-dlp/yt-dlp/issues/10128 (horrible thread)",
+    "mika_id": "the creators user id"
+}
