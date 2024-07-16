@@ -1,12 +1,13 @@
-![flame_fractal](./cache/banner.png)
+![flame_fractal](./cache/banner.png)[^3]
 > A light discord bot, based of jester's pom with: youtube audio playback, persistent dice rolls, rock-paper-scissors, coinflips and meatballs!
 
+### get started
 To get started, get NodeJs v20[^1], create a discord bot at https://discord.com/developers/applications, rename and provide the values inside config.json[^2].  
 Now run ``npm install`` to install any needed packages and then ``node .`` to start cato!  
 
-To add the bot to your server, create an invite at https://discord.com/developers/applications/your-bot-id/oauth2 and give it these permissions: decimal: ``1261440091730084003``, scopes: ``scope=applications.commands+bot``.
+To add the bot to your server, create an invite at https://discord.com/developers/applications/your-app-id/oauth2 and give it these permissions: ``permissions=1261440091730084003``, ``scope=applications.commands+bot``.
 
-### Docker
+### docker
 A dockerfile is also provided in oci_image/ , to build and run the image simply run:
 
 ``docker build --progress=plain -t cato:latest -f oci_image/Dockerfile .``
@@ -24,3 +25,4 @@ To be able to speak in voice channels, discord bots apparently need UDP ingress 
 
 [^1]: Needed for json asserts to our config file.
 [^2]: Actually needed are only the token and the client id
+[^3]: A very nice flame fractal!
