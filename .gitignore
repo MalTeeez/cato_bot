@@ -4,3 +4,4 @@ src/config.json
 cache/dice_ranges.json
 cache/audio/**
 ffmpeg
+/compose.yaml
