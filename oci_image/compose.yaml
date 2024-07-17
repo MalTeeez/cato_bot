@@ -1,6 +1,6 @@
 services:
   iview_nginx:
-    image: cato:latest
+    image: ghcr.io/malteeez/cato_bot:main
     container_name: discord_cato_bot
     restart: always
     environment:

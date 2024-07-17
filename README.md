@@ -8,15 +8,15 @@ Now run ``npm install`` to install any needed packages and then ``node .`` to st
 To add the bot to your server, create an invite at https://discord.com/developers/applications/your-app-id/oauth2 and give it these permissions: ``permissions=1261440091730084003``, ``scope=applications.commands+bot``.
 
 ### docker
-A dockerfile is also provided in oci_image/ , to build and run the image simply run:
+The image is provided here on gitlabs containger registry:
 
-``docker build --progress=plain -t cato:latest -f oci_image/Dockerfile .``
+``ghcr.io/malteeez/cato_bot:main``
 
-and 
+and can be run either with:
 
-``docker run -d -e BOT_TOKEN='YOUR-BOT-TOKEN' -e BOT_ID='YOUR-BOT-CLIENT-ID' cato:latest``.
+``docker run -d -e BOT_TOKEN='YOUR-BOT-TOKEN' -e BOT_ID='YOUR-BOT-CLIENT-ID' ghcr.io/malteeez/cato_bot:main``.
 
-A docker compose file is also provided in oci_image/ , where you again have to fill in the variables with your token and client id. (You will need to first build the image tho)
+or the docker compose file, which is provided in oci_image/ , where you again have to fill in the variables with your token and client id.
 
 
 ### Sidenotes
