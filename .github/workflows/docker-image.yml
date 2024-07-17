@@ -1,0 +1,27 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build --progress=plain -t cato:latest -f oci_image/Dockerfile .
+
+  release:
+    runs-on: redhat-actions/push-to-registry@v2.8
+
+    steps:
+    - name: Push To Registry
+    - uses: redhat-actions/push-to-registry@v2.8
+    - with:
+        image: cato
