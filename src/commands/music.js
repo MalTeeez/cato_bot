@@ -40,11 +40,21 @@ export default {
     }
 
     if (interaction.options.getSubcommand() === "start") {
-      const channel = interaction.options.getChannel("channel");
-      const url = interaction.options.getString("link");
+      let channel = interaction.options.getChannel("channel");
+      let url = interaction.options.getString("link")
+        .match(/(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|playlist\?|watch\?v=|watch\?.+(?:&|&#38;);v=))([a-zA-Z0-9\-_]{11})/);
       // Try to get previous connection
       let connection = getVoiceConnection(interaction.guild.id);
       const own_channel = interaction.guild.members.me.voice.channel;
+
+      if (!url) {
+        // Provided link is not valid
+        ghostInteractionReply(interaction, "**given link is not valid**. idiot. *maybe it wasn't a single video..*", 5)
+        return;
+      } else {
+        // Shorten the url
+        url = "https://youtu.be/" + url[1];
+      }
 
       if (channel && !channel.isVoiceBased()) {
         // Provided channel is not voice
@@ -52,15 +62,22 @@ export default {
         return;
       }
 
-      if (!connection && !channel) {
-        // There is no connection and no channel was provided
-        ghostInteractionReply(interaction, "it would be helpful to first know **where you want me** to make noise, you know..", 5)
-        return;
-      }
-
       if (!connection && channel) {
         // There is no connection and a channel was provided
         ghostInteractionReply(interaction, "**joining vc..**.", 5)
+      }
+
+      if (!connection && !channel) {
+        const source_member_voice = interaction.member.voice;
+        if (source_member_voice && source_member_voice.channel) {
+          // There is no connection and no channel was provided, but the source user is in a voice channel
+          channel = source_member_voice.channel;
+          ghostInteractionReply(interaction, "*joining your vc..*.", 5)
+        } else {
+          // There is no connection and no channel was provided
+          ghostInteractionReply(interaction, "it would be helpful to first know **where you want me** to make noise, you know..", 5)
+          return;
+        }
       }
 
       if (channel && connection && own_channel && own_channel.id !== channel.id) {
@@ -81,7 +98,7 @@ export default {
         }
         ghostInteractionReply(interaction, "**changing tunes..** i hope you didn't interrupt a drop there", 3)
       }
-
+      
       connect_and_prepare(channel, url, connection, interaction.channel, interaction.user);
 
     } else if (interaction.options.getSubcommand() === "pause_or_resume") {
@@ -140,9 +157,16 @@ export async function connect_and_prepare(channel, url, connection, source_chann
       // Seems to be reconnecting to a new channel - ignore disconnect
     } catch (error) {
       // Seems to be a real disconnect which SHOULDN'T be recovered from
-      console.log("encountered error on voiceConnectionStatus.Disconnected handler. ERR:")
-      console.log(error)
-      if (connection) connection.destroy();
+      console.log("encountered error on voice_connection_status.disconnected handler. ERR:")
+      console.log(error);
+      if (connection) {
+        try {
+          connection.destroy();
+        } catch (e) {
+          console.log("failed to destroy already disconnected client with still active connection. ERR:")
+          console.log(e);
+        }
+      }
     }
   });
 
@@ -154,12 +178,13 @@ export async function connect_and_prepare(channel, url, connection, source_chann
 
       if (stream) {
         const source_user_mention = userMention(source_user.id);
+        console.log(("[" + new Date(Date.now()).toISOString() + "] started playing " + url + " for " + source_user.displayName + "."))
         source_channel.send("\`\`oke, playing  ↓  for\`\` " + source_user_mention + ", \`\`im only doing this once, you hear me?.. \`\`\n              " + url)
 
         const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, silencePaddingFrames: 10 });
         play_resource(connection, resource)
           .then(() => {
-            resolve("Successfully finished playing resource.")
+            resolve("[" + new Date(Date.now()).toISOString() + "] successfully finished playing resource.")
           })
           .catch((e) => {
             reject(e)
@@ -171,7 +196,7 @@ export async function connect_and_prepare(channel, url, connection, source_chann
   }).then((value) => {
     console.log(value)
   }).catch((error) => {
-    console.log("Failed while playing resource. ERR:");
+    console.log("failed while playing resource. ERR:");
     console.log(error);
     ghostChannelMessage(source_channel, "encountered error while trying to play video, that *clearly* was your mistake, huh?", 10)
   });
@@ -197,7 +222,7 @@ export async function play_resource(connection, resource) {
         // Yes, there is, so we can reuse it
         player = subscription.player;
       } else {
-        console.log("Encountered subscription without subscribed player, something is off.")
+        console.log("encountered subscription without subscribed player, something is off.")
         player = createAudioPlayer({
           behaviors: {
             noSubscriber: NoSubscriberBehavior.Pause,
@@ -210,7 +235,7 @@ export async function play_resource(connection, resource) {
     }
 
     while (!player.playable) {
-      console.log("Player is still in state " + player.state + ", waiting.");
+      console.log("player is still in state " + player.state + ", waiting.");
       await later(500);
     }
     player.play(resource);
@@ -226,7 +251,7 @@ export async function play_resource(connection, resource) {
     const timeout = setTimeout(() => {
       player.stop();
       subscription?.unsubscribe();
-      if (connection) connection.destroy();
+      if (connection && connection.state == VoiceConnectionStatus.Ready) connection.destroy();
       resolve();
     }, 3_600_000);
 
