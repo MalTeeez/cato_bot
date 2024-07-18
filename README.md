@@ -1,5 +1,5 @@
 ![flame_fractal](./cache/banner.png)[^3]
-> A light discord bot, based of jester's pom with: youtube audio playback, persistent dice rolls, rock-paper-scissors, coinflips and meatballs!
+> A light discord bot, based of jester's pom with: music, persistent dice rolls, rock-paper-scissors, coinflips and meatballs!
 
 ### get started
 To get started, get NodeJs v20[^1], create a discord bot at https://discord.com/developers/applications, rename and provide the values inside config.json[^2].  
