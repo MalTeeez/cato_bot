@@ -8,7 +8,7 @@ Now run ``npm install`` to install any needed packages and then ``node .`` to st
 To add the bot to your server, create an invite at https://discord.com/developers/applications/your-app-id/oauth2 and give it these permissions: ``permissions=1261440091730084003``, ``scope=applications.commands+bot``.
 
 ### docker
-The image is provided here on gitlabs containger registry:
+The image is provided here on githubs container registry:
 
 ``ghcr.io/malteeez/cato_bot:main``
 
